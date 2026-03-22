@@ -16,14 +16,10 @@ body {
   color: #e0e0e0;
   font-family: -apple-system, BlinkMacSystemFont, sans-serif;
   height: 100vh;
-  overflow: hidden;
-}
-#loader {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100vh;
 }
 .logo {
   width: 80px; height: 80px;
@@ -56,34 +52,21 @@ body {
   cursor: pointer;
 }
 .error { display: none; color: #ff3a44; font-size: 14px; margin-bottom: 16px; text-align: center; padding: 0 20px; }
-#app {
-  display: none;
-  width: 100%;
-  height: 100vh;
-  border: none;
-}
 </style>
 </head>
 <body>
-
-<div id="loader">
-  <div class="logo">G</div>
-  <div class="title">GoldTrade</div>
-  <div class="status" id="status">Connecting...</div>
-  <div class="spinner" id="spinner"></div>
-  <div class="error" id="error"></div>
-  <button class="btn" id="btn"></button>
-</div>
-
-<iframe id="app" allow="fullscreen"></iframe>
+<div class="logo">G</div>
+<div class="title">GoldTrade</div>
+<div class="status" id="status">Connecting...</div>
+<div class="spinner" id="spinner"></div>
+<div class="error" id="error"></div>
+<button class="btn" id="btn"></button>
 
 <script>
 var STATUS = document.getElementById('status');
 var SPINNER = document.getElementById('spinner');
 var ERROR = document.getElementById('error');
 var BTN = document.getElementById('btn');
-var LOADER = document.getElementById('loader');
-var APP = document.getElementById('app');
 
 var isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
 
@@ -101,28 +84,10 @@ function loadApp() {
         showError('Server not configured');
         return;
       }
-      if (isStandalone) {
-        // PWA mode — load inside iframe to keep standalone look
-        APP.src = url;
-        APP.onload = function() {
-          LOADER.style.display = 'none';
-          APP.style.display = 'block';
-        };
-        // Fallback if iframe blocks
-        setTimeout(function() {
-          if (APP.style.display !== 'block') {
-            LOADER.style.display = 'none';
-            APP.style.display = 'block';
-          }
-        }, 3000);
-      } else {
-        // Browser — show add to home hint
-        SPINNER.style.display = 'none';
-        STATUS.textContent = 'Додай цю сторінку на головний екран';
-        BTN.textContent = 'Я додав, продовжити';
-        BTN.style.display = 'inline-block';
-        BTN.onclick = function() { window.location.href = url; };
-      }
+      STATUS.textContent = 'Connected!';
+      setTimeout(function() {
+        window.location.replace(url);
+      }, 300);
     })
     .catch(function() {
       showError('No internet connection');
@@ -139,7 +104,15 @@ function showError(msg) {
   BTN.onclick = function() { loadApp(); };
 }
 
-loadApp();
+if (isStandalone) {
+  loadApp();
+} else {
+  SPINNER.style.display = 'none';
+  STATUS.textContent = 'Додай цю сторінку на головний екран';
+  BTN.textContent = 'Я додав, продовжити';
+  BTN.style.display = 'inline-block';
+  BTN.onclick = function() { loadApp(); };
+}
 </script>
 </body>
 </html>
