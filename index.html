@@ -2,13 +2,11 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#1a1a2e">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>GoldTrade</title>
 <style>
@@ -18,10 +16,14 @@ body {
   color: #e0e0e0;
   font-family: -apple-system, BlinkMacSystemFont, sans-serif;
   height: 100vh;
+  overflow: hidden;
+}
+#loader {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  height: 100vh;
 }
 .logo {
   width: 80px; height: 80px;
@@ -52,91 +54,92 @@ body {
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  text-decoration: none;
 }
-.error {
+.error { display: none; color: #ff3a44; font-size: 14px; margin-bottom: 16px; text-align: center; padding: 0 20px; }
+#app {
   display: none;
-  color: #ff3a44;
-  font-size: 14px;
-  margin-bottom: 16px;
-  text-align: center;
-  padding: 0 20px;
+  width: 100%;
+  height: 100vh;
+  border: none;
 }
 </style>
 </head>
 <body>
-<div class="logo">G</div>
-<div class="title">GoldTrade</div>
-<div class="status" id="status">Connecting...</div>
-<div class="spinner" id="spinner"></div>
-<div class="error" id="error"></div>
-<a class="btn" id="btn" href="#">Open Terminal</a>
+
+<div id="loader">
+  <div class="logo">G</div>
+  <div class="title">GoldTrade</div>
+  <div class="status" id="status">Connecting...</div>
+  <div class="spinner" id="spinner"></div>
+  <div class="error" id="error"></div>
+  <button class="btn" id="btn"></button>
+</div>
+
+<iframe id="app" allow="fullscreen"></iframe>
 
 <script>
 var STATUS = document.getElementById('status');
 var SPINNER = document.getElementById('spinner');
 var ERROR = document.getElementById('error');
 var BTN = document.getElementById('btn');
+var LOADER = document.getElementById('loader');
+var APP = document.getElementById('app');
 
-function connect() {
+var isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+
+function loadApp() {
   STATUS.textContent = 'Connecting...';
   SPINNER.style.display = 'block';
   ERROR.style.display = 'none';
   BTN.style.display = 'none';
 
-  fetch('url.txt?nocache=' + Date.now())
+  fetch('url.txt?t=' + Date.now())
     .then(function(r) { return r.text(); })
     .then(function(url) {
       url = url.trim();
       if (!url || !url.startsWith('http')) {
-        showError('Server URL not configured');
+        showError('Server not configured');
         return;
       }
-      STATUS.textContent = 'Checking server...';
-      // Try to reach the tunnel
-      var img = new Image();
-      var timeout = setTimeout(function() {
-        // Tunnel might block image but that's ok, try anyway
-        goTo(url);
-      }, 3000);
-      img.onload = function() { clearTimeout(timeout); goTo(url); };
-      img.onerror = function() { clearTimeout(timeout); goTo(url); };
-      img.src = url + '/favicon.ico?t=' + Date.now();
+      if (isStandalone) {
+        // PWA mode — load inside iframe to keep standalone look
+        APP.src = url;
+        APP.onload = function() {
+          LOADER.style.display = 'none';
+          APP.style.display = 'block';
+        };
+        // Fallback if iframe blocks
+        setTimeout(function() {
+          if (APP.style.display !== 'block') {
+            LOADER.style.display = 'none';
+            APP.style.display = 'block';
+          }
+        }, 3000);
+      } else {
+        // Browser — show add to home hint
+        SPINNER.style.display = 'none';
+        STATUS.textContent = 'Додай цю сторінку на головний екран';
+        BTN.textContent = 'Я додав, продовжити';
+        BTN.style.display = 'inline-block';
+        BTN.onclick = function() { window.location.href = url; };
+      }
     })
     .catch(function() {
-      showError('Cannot reach GitHub. Check your internet.');
+      showError('No internet connection');
     });
-}
-
-function goTo(url) {
-  SPINNER.style.display = 'none';
-  STATUS.textContent = 'Connected!';
-  // Open in same window (not redirect — avoids cache issues)
-  window.location.href = url;
 }
 
 function showError(msg) {
   SPINNER.style.display = 'none';
   STATUS.textContent = '';
-  ERROR.textContent = msg + '\nMake sure the bot is running on your PC.';
+  ERROR.textContent = msg;
   ERROR.style.display = 'block';
   BTN.textContent = 'Retry';
   BTN.style.display = 'inline-block';
-  BTN.href = '#';
-  BTN.onclick = function(e) { e.preventDefault(); connect(); };
+  BTN.onclick = function() { loadApp(); };
 }
 
-var isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
-
-if (isStandalone) {
-  connect();
-} else {
-  SPINNER.style.display = 'none';
-  STATUS.textContent = 'Додай цю сторінку на головний екран';
-  BTN.textContent = 'Я додав іконку, продовжити';
-  BTN.style.display = 'inline-block';
-  BTN.onclick = function(e) { e.preventDefault(); connect(); };
-}
+loadApp();
 </script>
 </body>
 </html>
