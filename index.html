@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1a1a2e">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>GoldTrade</title>
+<style>
+body {
+  margin: 0;
+  background: #0f0f23;
+  color: #e0e0e0;
+  font-family: -apple-system, sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  text-align: center;
+}
+.loader {
+  font-size: 18px;
+}
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #333;
+  border-top: 3px solid #5eaaef;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 20px auto;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.error { color: #ff3a44; display: none; margin-top: 20px; }
+</style>
+</head>
+<body>
+<div class="loader">
+  <div class="spinner"></div>
+  <div>GoldTrade</div>
+  <div style="color:#8a8a9a;font-size:13px;margin-top:8px">Connecting...</div>
+  <div class="error" id="error">Server offline. Start the bot on your PC.</div>
+</div>
+<script>
+fetch('url.txt?t=' + Date.now())
+  .then(r => r.text())
+  .then(url => {
+    url = url.trim();
+    if (url && url.startsWith('http')) {
+      window.location.replace(url);
+    } else {
+      document.getElementById('error').style.display = 'block';
+    }
+  })
+  .catch(() => {
+    document.getElementById('error').style.display = 'block';
+  });
+</script>
+</body>
+</html>
