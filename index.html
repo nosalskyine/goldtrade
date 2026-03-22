@@ -126,7 +126,17 @@ function showError(msg) {
   BTN.onclick = function(e) { e.preventDefault(); connect(); };
 }
 
-connect();
+var isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+
+if (isStandalone) {
+  connect();
+} else {
+  SPINNER.style.display = 'none';
+  STATUS.textContent = 'Додай цю сторінку на головний екран';
+  BTN.textContent = 'Я додав іконку, продовжити';
+  BTN.style.display = 'inline-block';
+  BTN.onclick = function(e) { e.preventDefault(); connect(); };
+}
 </script>
 </body>
 </html>
