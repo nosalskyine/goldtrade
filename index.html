@@ -6,57 +6,127 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#1a1a2e">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>GoldTrade</title>
 <style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
 body {
-  margin: 0;
   background: #0f0f23;
   color: #e0e0e0;
-  font-family: -apple-system, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  height: 100vh;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100vh;
-  text-align: center;
 }
-.loader {
-  font-size: 18px;
+.logo {
+  width: 80px; height: 80px;
+  background: linear-gradient(135deg, #ffd700, #ff8c00);
+  border-radius: 20px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 40px; font-weight: 700; color: #1a1a2e;
+  margin-bottom: 20px;
 }
+.title { font-size: 22px; font-weight: 600; margin-bottom: 8px; }
+.status { color: #8a8a9a; font-size: 14px; margin-bottom: 30px; }
 .spinner {
-  width: 40px;
-  height: 40px;
+  width: 36px; height: 36px;
   border: 3px solid #333;
-  border-top: 3px solid #5eaaef;
+  border-top: 3px solid #ffd700;
   border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin: 20px auto;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 20px;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-.error { color: #ff3a44; display: none; margin-top: 20px; }
+.btn {
+  display: none;
+  padding: 14px 40px;
+  background: #5eaaef;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+}
+.error {
+  display: none;
+  color: #ff3a44;
+  font-size: 14px;
+  margin-bottom: 16px;
+  text-align: center;
+  padding: 0 20px;
+}
 </style>
 </head>
 <body>
-<div class="loader">
-  <div class="spinner"></div>
-  <div>GoldTrade</div>
-  <div style="color:#8a8a9a;font-size:13px;margin-top:8px">Connecting...</div>
-  <div class="error" id="error">Server offline. Start the bot on your PC.</div>
-</div>
+<div class="logo">G</div>
+<div class="title">GoldTrade</div>
+<div class="status" id="status">Connecting...</div>
+<div class="spinner" id="spinner"></div>
+<div class="error" id="error"></div>
+<a class="btn" id="btn" href="#">Open Terminal</a>
+
 <script>
-fetch('url.txt?t=' + Date.now())
-  .then(r => r.text())
-  .then(url => {
-    url = url.trim();
-    if (url && url.startsWith('http')) {
-      window.location.replace(url);
-    } else {
-      document.getElementById('error').style.display = 'block';
-    }
-  })
-  .catch(() => {
-    document.getElementById('error').style.display = 'block';
-  });
+var STATUS = document.getElementById('status');
+var SPINNER = document.getElementById('spinner');
+var ERROR = document.getElementById('error');
+var BTN = document.getElementById('btn');
+
+function connect() {
+  STATUS.textContent = 'Connecting...';
+  SPINNER.style.display = 'block';
+  ERROR.style.display = 'none';
+  BTN.style.display = 'none';
+
+  fetch('url.txt?nocache=' + Date.now())
+    .then(function(r) { return r.text(); })
+    .then(function(url) {
+      url = url.trim();
+      if (!url || !url.startsWith('http')) {
+        showError('Server URL not configured');
+        return;
+      }
+      STATUS.textContent = 'Checking server...';
+      // Try to reach the tunnel
+      var img = new Image();
+      var timeout = setTimeout(function() {
+        // Tunnel might block image but that's ok, try anyway
+        goTo(url);
+      }, 3000);
+      img.onload = function() { clearTimeout(timeout); goTo(url); };
+      img.onerror = function() { clearTimeout(timeout); goTo(url); };
+      img.src = url + '/favicon.ico?t=' + Date.now();
+    })
+    .catch(function() {
+      showError('Cannot reach GitHub. Check your internet.');
+    });
+}
+
+function goTo(url) {
+  SPINNER.style.display = 'none';
+  STATUS.textContent = 'Connected!';
+  // Open in same window (not redirect — avoids cache issues)
+  window.location.href = url;
+}
+
+function showError(msg) {
+  SPINNER.style.display = 'none';
+  STATUS.textContent = '';
+  ERROR.textContent = msg + '\nMake sure the bot is running on your PC.';
+  ERROR.style.display = 'block';
+  BTN.textContent = 'Retry';
+  BTN.style.display = 'inline-block';
+  BTN.href = '#';
+  BTN.onclick = function(e) { e.preventDefault(); connect(); };
+}
+
+connect();
 </script>
 </body>
 </html>
